@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="utf-8"?>
+<modification>
+	<name>TMD Coupon Export/Import Module</name>
+	<id>TMD Coupon Export/Import Module</id>
+	<code>TMD Coupon Export/Import Module</code>
+	<version>3.x</version>
+	<author>TMD(opencartextensions.in)</author>
+	<link>http://opencartextensions.in/</link>
+			
+	<file path="admin/view/template/marketing/coupon_list.twig">
+		<operation error="log">
+			<search ><![CDATA[<a href="{{ add }}" data-toggle="tooltip" title="{{ button_add }}" class="btn btn-primary"><i class="fa fa-plus"></i></a>]]></search>
+			<add position="replace"><![CDATA[
+			{% if tmdcouponimpexp_status %}<a href="{{ import }}" data-toggle="tooltip" title="{{ button_import }}" class="btn btn-primary"><i class="fa fa-upload"></i> {{ button_import }}</a>
+			<a href="{{ export }}" class="btn btn-primary" data-toggle="tooltip" title="{{ button_export }}"><i class="fa fa-download"></i> {{ button_export }}</a> <a href="{{ add }}" data-toggle="tooltip" title="{{ button_add }}" class="btn btn-primary"><i class="fa fa-plus"></i></a> {% else %}<a href="{{ add }}" data-toggle="tooltip" title="{{ button_add }}" class="btn btn-primary"><i class="fa fa-plus"></i></a>{% endif %}]]></add>
+		</operation>
+	</file>
+	
+	<file path="admin/controller/marketing/coupon.php">
+		<operation error="log">
+			<search ><![CDATA[class ControllerMarketingCoupon extends Controller {]]></search>
+			<add position="before"><![CDATA[/* EXPORT STARTS */
+			require_once(DIR_SYSTEM.'/library/tmd/Psr/autoloader.php');
+			require_once(DIR_SYSTEM.'/library/tmd/myclabs/Enum.php');
+			require_once(DIR_SYSTEM.'/library/tmd/ZipStream/autoloader.php');
+			require_once(DIR_SYSTEM.'/library/tmd/ZipStream/ZipStream.php');
+			require_once(DIR_SYSTEM.'/library/tmd/PhpSpreadsheet/autoloader.php');
+			use PhpOffice\PhpSpreadsheet\Spreadsheet;
+			use PhpOffice\PhpSpreadsheet\Reader\Csv;
+			use PhpOffice\PhpSpreadsheet\Reader\Xlsx;
+			use PhpOffice\PhpSpreadsheet\Reader\Xls;
+			/* EXPORT ENDS */]]></add>
+		</operation>
+		
+		<operation error="log">
+			<search ><![CDATA[$filter_data = array(]]></search>
+			<add position="before"><![CDATA[
+			///xml///
+			$data['tmdcouponimpexp_status'] = $this->config->get('module_tmdcouponimpexp_status');
+			$data['button_export']=$this->language->get('button_export');
+			$data['button_import']=$this->language->get('button_import');
+			$data['export'] = $this->url->link('marketing/coupon/export', 'user_token=' . $this->session->data['user_token'] . $url, true);
+			$data['import'] = $this->url->link('extension/couponimport', 'user_token=' . $this->session->data['user_token'] . $url, true);
+			///xml///
+			]]></add>
+		</operation>
+		
+		<operation error="log">
+			<search ><![CDATA[if (isset($this->session->data['success'])) {]]></search>
+			<add position="before"><![CDATA[
+				/////XML////
+				if (isset($this->session->data['error_warning'])) {
+			$data['error_warning'] = $this->session->data['error_warning'];
+			unset($this->session->data['error_warning']);
+		}
+				/////XML////
+			]]></add>
+		</operation>
+		
+		<operation error="log">
+			<search ><![CDATA[public function delete() {]]></search>
+			<add position="before"><![CDATA[
+			///xml///
+		public function export() {
+        
+			$this->load->model('marketing/coupon');
+			$this->load->language('marketing/coupon');
+		
+				 if (isset($this->request->get['sort'])) {
+					$sort = $this->request->get['sort'];
+				} else {
+					$sort = 'name';
+				}
+
+				if (isset($this->request->get['order'])) {
+					$order = $this->request->get['order'];
+				} else {
+					$order = 'ASC';
+				}
+			 
+				$data['coupons'] = array();
+
+				$filter_data = array(
+					'sort'                     => $sort,
+					'order'                    => $order,
+				);
+
+				$results = $this->model_marketing_coupon->getCoupons($filter_data);
+
+				foreach ($results as $result) {
+					$result= $this->model_marketing_coupon->getCoupon($result['coupon_id']);
+					$product_ids='';
+				$product_names='';
+				$categories_ids='';
+				$categories_names='';
+				$coupon_id=$result['coupon_id'];
+				$datapro=$this->model_marketing_coupon->getCouponProducts($coupon_id);
+				if(isset($datapro))
+				{
+					foreach($datapro as $product)
+					{
+					if(!empty($product))
+					{
+					$sql =$this->db->query("SELECT name FROM " . DB_PREFIX . "product p LEFT JOIN " . DB_PREFIX . "product_description pd ON (p.product_id = pd.product_id) where p.product_id='".$product."'");
+					$product_ids .=$product.',';
+					$product_names .=$sql->row['name'].',';
+					}
+					
+					}
+				}
+				$datacat=$this->model_marketing_coupon->getCouponCategories($coupon_id);
+				
+				if(isset($datacat))
+				{
+					foreach($datacat as $category)
+					{
+						if(!empty($category))
+					{
+					$sql =$this->db->query("SELECT name FROM " . DB_PREFIX . "category c LEFT JOIN " . DB_PREFIX . "category_description cd ON (c.category_id = cd.category_id) where c.category_id='".$category."'");
+					$categories_ids .=$category.',';
+					$categories_names .=$sql->row['name'].',';
+					}
+					
+					}
+				}
+			   
+					$data['coupons'][] = array(
+						'coupon_id'  => $result['coupon_id'],
+						'name'       => $result['name'],
+						'code'       => $result['code'],
+						'discount'   => $result['discount'],
+						 'date_start'     => $result['date_start'],
+						 'date_end'     => $result['date_end'],
+						'status'         => ($result['status'] ? $this->language->get('text_enabled') : $this->language->get('text_disabled')),
+						 'type'     => $result['type'],
+						 'total'     => $result['total'],
+						 'logged'         => ($result['logged'] ? $this->language->get('text_yes') : $this->language->get('text_no')),
+						 'shipping'         => ($result['shipping'] ? $this->language->get('text_yes') : $this->language->get('text_no')),
+						 'uses_total'     => $result['uses_total'],
+						 'uses_customer'     => $result['uses_customer'],
+						 'date_added'     => $result['date_added'],
+						'product_ids'     => $product_ids,
+						 'product_names'     => $product_names,
+						 'categories_ids'     => $categories_ids,
+						 'categories_names'     => $categories_names,
+				);
+				}
+
+				$coupons = $this->request->clean($data['coupons']);
+
+				$spreadsheet = new Spreadsheet();
+				
+				
+				//Columns
+				$i=1;
+			$spreadsheet->getActiveSheet()->SetCellValue('A'.$i, $this->language->get('column_coupon_id'));
+			$spreadsheet->getActiveSheet()->SetCellValue('B'.$i, $this->language->get('column_name'));
+			$spreadsheet->getActiveSheet()->SetCellValue('C'.$i, $this->language->get('column_code'));
+			$spreadsheet->getActiveSheet()->SetCellValue('D'.$i, $this->language->get('column_type'));
+			$spreadsheet->getActiveSheet()->SetCellValue('E'.$i, $this->language->get('column_discount'));
+			$spreadsheet->getActiveSheet()->SetCellValue('F'.$i, $this->language->get('column_total'));
+			$spreadsheet->getActiveSheet()->SetCellValue('G'.$i, $this->language->get('column_logged'));
+			$spreadsheet->getActiveSheet()->SetCellValue('H'.$i, $this->language->get('column_shipping'));
+			$spreadsheet->getActiveSheet()->SetCellValue('I'.$i, $this->language->get('column_products_ids'));
+			$spreadsheet->getActiveSheet()->SetCellValue('J'.$i, $this->language->get('column_products_names'));
+			$spreadsheet->getActiveSheet()->SetCellValue('K'.$i, $this->language->get('column_categories_ids'));
+			$spreadsheet->getActiveSheet()->SetCellValue('L'.$i, $this->language->get('column_categories_names'));
+			$spreadsheet->getActiveSheet()->SetCellValue('M'.$i, $this->language->get('column_start_date'));
+			$spreadsheet->getActiveSheet()->SetCellValue('N'.$i, $this->language->get('column_end_date'));
+			$spreadsheet->getActiveSheet()->SetCellValue('O'.$i, $this->language->get('column_uses_per_couopn'));
+			$spreadsheet->getActiveSheet()->SetCellValue('P'.$i, $this->language->get('column_uses_per_customer'));
+			$spreadsheet->getActiveSheet()->SetCellValue('Q'.$i, $this->language->get('column_status'));
+
+
+				$i=2;
+
+				foreach($coupons as $coupon) {					
+					
+						 $spreadsheet->getActiveSheet()->SetCellValue('A'.$i, $coupon['coupon_id']);
+						 $spreadsheet->getActiveSheet()->SetCellValue('B'.$i, $coupon['name']);
+						 $spreadsheet->getActiveSheet()->SetCellValue('C'.$i, $coupon['code']);
+						 $spreadsheet->getActiveSheet()->SetCellValue('D'.$i, $coupon['type']);
+						 $spreadsheet->getActiveSheet()->SetCellValue('E'.$i, $coupon['discount']);
+						 $spreadsheet->getActiveSheet()->SetCellValue('F'.$i, $coupon['total']);
+						 $spreadsheet->getActiveSheet()->SetCellValue('G'.$i, $coupon['logged']);
+						 $spreadsheet->getActiveSheet()->SetCellValue('H'.$i, $coupon['shipping']);
+						 $spreadsheet->getActiveSheet()->SetCellValue('I'.$i, $coupon['product_ids']);
+						 $spreadsheet->getActiveSheet()->SetCellValue('J'.$i, $coupon['product_names']);
+						 $spreadsheet->getActiveSheet()->SetCellValue('K'.$i, $coupon['categories_ids']);
+						 $spreadsheet->getActiveSheet()->SetCellValue('L'.$i, $coupon['categories_names']);
+						 $spreadsheet->getActiveSheet()->SetCellValue('M'.$i, $coupon['date_start']);
+						 $spreadsheet->getActiveSheet()->SetCellValue('N'.$i, $coupon['date_end']);
+						 $spreadsheet->getActiveSheet()->SetCellValue('O'.$i, $coupon['uses_total']);
+						 $spreadsheet->getActiveSheet()->SetCellValue('P'.$i, $coupon['uses_customer']);
+						 $spreadsheet->getActiveSheet()->SetCellValue('Q'.$i, $coupon['status']);
+					$i++;
+				}
+					
+		
+
+				$filename = 'coupon_export.xls';
+		$spreadsheet->getActiveSheet()->setTitle('All Coupons');
+		$writer =new \PhpOffice\PhpSpreadsheet\Writer\Xls($spreadsheet);
+	    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+		header('Content-Disposition: attachment; filename="'. urlencode($filename).'"');
+		$writer->save('php://output');
+		}
+			///xml///
+			]]></add>
+		</operation>
+		
+		
+	</file>
+	
+	<file path="admin/language/*/marketing/coupon.php">
+		<operation error="log">
+			<search ><![CDATA[// Text]]></search>
+			<add position="after"><![CDATA[
+			///xml//
+			$_['button_export']   = 'Export Coupons';
+			$_['button_import']   = 'Import Coupons';
+			$_['column_coupon_id']      = 'Coupon Id';
+			$_['column_name']      = 'Name';
+			$_['column_code']      = 'Code';
+			$_['column_discount']       = 'Discount';
+			$_['column_date_start']          = 'Date-Start';
+			$_['column_date_end']         = 'Date-End';
+			$_['column_status']         = 'Status';
+			$_['column_uses_per_customer']         = 'Uses Per Customer';
+			$_['column_type']         = 'Type';
+			$_['column_total']         = 'Total Amount';
+			$_['column_logged']         = 'Customer Login';
+			$_['column_shipping']         = 'Free Shipping';
+			$_['column_products_ids']         = 'Product Ids';
+			$_['column_products_names']         = 'Product Names';
+			$_['column_categories_ids']         = 'Category Ids';
+			$_['column_categories_names']         = 'Category Names';
+			$_['column_start_date']         = 'Date Start (Y-m-d)';
+			$_['column_end_date']         = 'Date End (Y-m-d)';
+			$_['column_uses_per_couopn']         = 'Uses Per Couopn';
+			///xml//
+			]]></add>
+		</operation>
+	</file>
+	
+	
+</modification>
