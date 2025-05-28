@@ -20,7 +20,7 @@ class Couponimport extends \Opencart\System\Engine\Controller {
 		$this->registry->set('tmd', new  \Tmdcouponimportexport\System\Library\Tmd\System($this->registry));
 		$keydata=array(
 		'code'=>'tmdkey_couponimport',
-		'eid'=>'',
+		'eid'=>'MjUzODA=',
 		'route'=>'extension/tmdcouponimportexport/module/couponimport',
 		);
 		$couponimport=$this->tmd->getkey($keydata['code']);
@@ -110,7 +110,7 @@ class Couponimport extends \Opencart\System\Engine\Controller {
       	if (($this->request->server['REQUEST_METHOD'] == 'POST')) {
 			$keydata=array(
 			'code'=>'tmdkey_couponimport',
-			'eid'=>'',
+			'eid'=>'MjUzODA=',
 			'route'=>'extension/tmdcouponimportexport/module/couponimport',
 			'moduledata_key'=>$this->request->post['moduledata_key'],
 			);
@@ -172,6 +172,7 @@ class Couponimport extends \Opencart\System\Engine\Controller {
 	public function tmdimportexportcoupon(string&$route, array&$args, mixed&$output):void {
 		$modulestatus=$this->config->get('module_couponimport_status');
 		$this->load->language('extension/tmdcouponimportexport/module/couponimport');
+		$this->load->language('marketing/coupon');
 		if(!empty($modulestatus)){
 			$url='';
 			if(VERSION>='4.0.2.0'){
@@ -185,9 +186,15 @@ class Couponimport extends \Opencart\System\Engine\Controller {
 			
         	$template_buffer = $this->getTemplateBuffer($route,$output);
 
-			$find='	<a href="{{ add }}" data-bs-toggle="tooltip" title="{{ button_add }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i></a>';
-			$replace='<a href="{{ import }}" data-bs-toggle="tooltip" title="{{ button_importcoupons }}" class="btn btn-primary"><i class="fa fa-upload"></i> {{ button_importcoupons }}</a> 
-			<a href="{{ export }}" class="btn btn-primary" data-bs-toggle="tooltip" title="{{ button_exportcoupons }}"><i class="fa fa-download"></i> {{ button_exportcoupons }}</a> <a href="{{ add }}" data-bs-toggle="tooltip" title="{{ button_add }}" class="btn btn-primary"><i class="fa fa-plus"></i></a>';
+			if(VERSION>='4.1.0.0'){
+	            $find='<a href="{{ add }}" data-bs-toggle="tooltip" title="{{ button_add }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i></a>';
+				$replace='<a href="{{ import }}" data-bs-toggle="tooltip" title="{{ button_importcoupons }}" class="btn btn-primary"><i class="fa fa-upload"></i> {{ button_importcoupons }}</a> 
+				<a href="{{ export }}" class="btn btn-primary" data-bs-toggle="tooltip" title="{{ button_exportcoupons }}"><i class="fa fa-download"></i> {{ button_exportcoupons }}</a> <a href="{{ add }}" data-bs-toggle="tooltip" title="{{ button_add }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i></a>';
+             }else{
+				$find='	<a href="{{ add }}" data-bs-toggle="tooltip" title="{{ button_add }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i></a>';
+				$replace='<a href="{{ import }}" data-bs-toggle="tooltip" title="{{ button_importcoupons }}" class="btn btn-primary"><i class="fa fa-upload"></i> {{ button_importcoupons }}</a> 
+				<a href="{{ export }}" class="btn btn-primary" data-bs-toggle="tooltip" title="{{ button_exportcoupons }}"><i class="fa fa-download"></i> {{ button_exportcoupons }}</a><a href="{{ add }}" data-bs-toggle="tooltip" title="{{ button_add }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i></a>';
+		  }
 			$output = str_replace( $find, $replace, $template_buffer );
 		}
 	}

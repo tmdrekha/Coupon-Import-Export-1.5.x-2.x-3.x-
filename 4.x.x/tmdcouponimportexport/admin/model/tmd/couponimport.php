@@ -5,20 +5,19 @@ class Couponimport extends \Opencart\System\Engine\Model {
 	public function addCoupon($data) {
 
 		if($data['logged'] == 'Yes'){
-          $logged = '1';
-		
+          	$logged = '1';
 	    }else{
             $logged = '0';
 	    }
 		if($data['shipping'] == 'Yes'){
-		  $shipping = '1';
+		  	$shipping = '1';
 		}else{
 		    $shipping = '0';
 		}
 		if(!empty($data['date_added'])){
-			$date_added = $data['date_added'];
+			$date_added     = $data['date_added'];
 		}else{
-		  $date_added 	='NOW()';
+		 	 $date_added 	='NOW()';
 		}
 		$this->db->query("INSERT INTO " . DB_PREFIX . "coupon SET name = '" . $this->db->escape($data['name']) . "', code = '" . $this->db->escape($data['code']) . "', discount = '" . (float)$data['discount'] . "', type = '" . $this->db->escape($data['type']) . "', total = '" . (float)$data['total'] . "', logged = '" . (int)$logged . "', shipping = '" . (int)$shipping . "', date_start = '" . $this->db->escape($data['date_start']) . "', date_end = '" . $this->db->escape($data['date_end']) . "', uses_total = '" . (int)$data['uses_total'] . "', uses_customer = '" . (int)$data['uses_customer'] . "', status = '" . (int)$data['status'] . "', date_added = '".$date_added."'");
 
@@ -40,12 +39,11 @@ class Couponimport extends \Opencart\System\Engine\Model {
 	public function editCoupon($data,$coupon_id) {
 		if($data['logged'] == 'Yes'){
           $logged = '1';
-		
 	    }else{
-            $logged = '0';
+          $logged = '0';
 	    }
 		if($data['shipping'] == 'Yes'){
-		  $shipping = '1';
+		    $shipping = '1';
 		}else{
 		    $shipping = '0';
 		}

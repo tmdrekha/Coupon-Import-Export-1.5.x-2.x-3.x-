@@ -3,7 +3,7 @@
 $_['heading_title1']   	 		= 'TMD Import Coupon Excel file';
 $_['heading_title']     		= '<span style="color:#1C95DE;font-weight:bold;"><i class="fa fa-upload"></i> TMD Import Coupon Excel file</span>';
 
-$_['entry_import']    			= 'Import xls File <br/> Please Import Same format if you have not format please download <a href="'.HTTP_CATALOG.'extension/tmdcouponimportexport/image/catalog/couopn_export.xls" data-bs-toggle="tooltip" title="Download format">From here <i class="fa fa-question-circle"></i></a>';
+$_['entry_import']    			= 'Import xls File <br/> Please Import Same format if you have not format please download <a href="'.HTTP_CATALOG.'extension/tmdcouponimportexport/image/catalog/coupon_export.xls" data-bs-toggle="tooltip" title="Download format">From here <i class="fa fa-question-circle"></i></a>';
 
 
 // Text
